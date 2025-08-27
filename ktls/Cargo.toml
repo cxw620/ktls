@@ -27,13 +27,14 @@ tokio = { version = "1.40", optional = true }
 tracing = { version = "0.1.41", optional = true }
 
 [dev-dependencies]
-lazy_static = "1.5.0"
-oorandom = "11.1.4"
-rcgen = "0.13.1"
-socket2 = "0.5.7"
+ktls-util = { path = "../ktls-util", default-features = false, features = ["tls12", "ring"] }
+rand = "0.9.2"
+rcgen = { version = "0.14.3" }
+rustls = { version = "0.23.27", default-features = false, features = ["std", "ring"] }
 test-case = "3.3.1"
-tokio = { version = "1.39.2", features = ["full"] }
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tokio = { version = "1.40", features = ["io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "parking_lot"] }
 
 [features]
 default = ["tls12", "async-io-tokio", "probe-ktls-compatibility"]
