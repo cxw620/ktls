@@ -25,6 +25,7 @@ use tokio::io::{AsyncRead, AsyncReadExt};
 
 pub mod client;
 pub(crate) mod error;
+pub mod server;
 
 pub(crate) async fn read_record<S>(socket: &mut S, incoming: &mut Vec<u8>) -> io::Result<()>
 where
