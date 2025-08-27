@@ -12,6 +12,11 @@ pub enum Error {
     /// Invalid crypto material, e.g., wrong size key or IV.
     InvalidCryptoInfo(#[from] InvalidCryptoInfo),
 
+    #[error("failed to extract connection secrets from rustls connection: {0}")]
+    /// Failed to extract connection secrets from rustls connection, e.g., not
+    /// have `config.enable_secret_extraction` set to true
+    ExtractSecrets(#[source] rustls::Error),
+
     #[error(transparent)]
     /// General IO error.
     IO(#[from] io::Error),

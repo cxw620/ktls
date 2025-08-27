@@ -21,11 +21,7 @@
 #[cfg(not(target_os = "linux"))]
 compile_error!("This crate only supports Linux");
 
-pub mod setup;
-
-use futures_util::future::try_join_all;
-use ktls_sys::bindings as sys;
-use rustls::{Connection, SupportedCipherSuite, SupportedProtocolVersion};
+use rustls::{SupportedCipherSuite, SupportedProtocolVersion};
 
 #[cfg(all(not(feature = "ring"), not(feature = "aws_lc_rs")))]
 compile_error!("This crate needs wither the 'ring' or 'aws_lc_rs' feature enabled");
@@ -35,32 +31,14 @@ compile_error!("The 'ring' and 'aws_lc_rs' features are mutually exclusive");
 use rustls::crypto::aws_lc_rs::cipher_suite;
 #[cfg(feature = "ring")]
 use rustls::crypto::ring::cipher_suite;
+use tokio::net::{TcpListener, TcpStream};
 
-use smallvec::SmallVec;
-use std::{
-    future::Future,
-    io,
-    net::SocketAddr,
-    os::unix::prelude::{AsRawFd, RawFd},
-};
-use tokio::{
-    io::{AsyncRead, AsyncReadExt, AsyncWrite},
-    net::{TcpListener, TcpStream},
-};
-
+pub mod error;
 mod ffi;
 pub mod log;
 mod protocol;
-pub mod error;
-
-mod async_read_ready;
-pub use async_read_ready::AsyncReadReady;
-
-mod ktls_stream;
-pub use ktls_stream::KtlsStream;
-
-mod cork_stream;
-pub use cork_stream::CorkStream;
+pub mod setup;
+pub mod stream;
 
 #[derive(Debug, Default)]
 pub struct CompatibleCiphers {
@@ -239,108 +217,6 @@ fn sample_cipher_setup(sock: &TcpStream, cipher_suite: SupportedCipherSuite) -> 
     setup_ulp(fd).map_err(Error::UlpError)?;
 
     setup_tls_info(fd, ffi::Direction::Tx, crypto_info)?;
-
-    Ok(())
-}
-
-/// Configure kTLS for this socket. If this call succeeds, data can be written
-/// and read from this socket, and the kernel takes care of encryption
-/// transparently. I'm not clear how rekeying is handled (probably via control
-/// messages, but can't find a code sample for it).
-///
-/// The inner IO type must be wrapped in [CorkStream] since it's the only way
-/// to drain a rustls stream cleanly. See its documentation for details.
-pub async fn config_ktls_server<IO>(
-    mut stream: tokio_rustls::server::TlsStream<CorkStream<IO>>,
-) -> Result<KtlsStream<IO>, Error>
-where
-    IO: AsRawFd + AsyncRead + AsyncReadReady + AsyncWrite + Unpin,
-{
-    stream.get_mut().0.corked = true;
-    let drained = drain(&mut stream).await.map_err(Error::DrainError)?;
-    let (io, conn) = stream.into_inner();
-    let io = io.io;
-
-    setup_inner(io.as_raw_fd(), Connection::Server(conn))?;
-    Ok(KtlsStream::new(io, drained))
-}
-
-/// Configure kTLS for this socket. If this call succeeds, data can be
-/// written and read from this socket, and the kernel takes care of encryption
-/// (and key updates, etc.) transparently.
-///
-/// The inner IO type must be wrapped in [CorkStream] since it's the only way
-/// to drain a rustls stream cleanly. See its documentation for details.
-pub async fn config_ktls_client<IO>(
-    mut stream: tokio_rustls::client::TlsStream<CorkStream<IO>>,
-) -> Result<KtlsStream<IO>, Error>
-where
-    IO: AsRawFd + AsyncRead + AsyncWrite + Unpin,
-{
-    stream.get_mut().0.corked = true;
-    let drained = drain(&mut stream).await.map_err(Error::DrainError)?;
-    let (io, conn) = stream.into_inner();
-    let io = io.io;
-
-    setup_inner(io, Connection::Client(conn))?;
-    Ok(KtlsStream::new(io, drained))
-}
-
-/// Read all the bytes we can read without blocking. This is used to drained the
-/// already-decrypted buffer from a tokio-rustls I/O type
-async fn drain(stream: &mut (impl AsyncRead + Unpin)) -> std::io::Result<Option<Vec<u8>>> {
-    tracing::trace!("Draining rustls stream");
-    let mut drained = vec![0u8; 128 * 1024];
-    let mut filled = 0;
-
-    loop {
-        tracing::trace!("stream.read called");
-        let n = match stream.read(&mut drained[filled..]).await {
-            Ok(n) => n,
-            Err(ref e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
-                // actually this is expected for us!
-                tracing::trace!("stream.read returned UnexpectedEof, that's expected for us");
-                break;
-            }
-            Err(e) => {
-                tracing::trace!("stream.read returned error: {e}");
-                return Err(e);
-            }
-        };
-        tracing::trace!("stream.read returned {n}");
-        if n == 0 {
-            // that's what CorkStream returns when it's at a message boundary
-            break;
-        }
-        filled += n;
-    }
-
-    let maybe_drained = if filled == 0 {
-        None
-    } else {
-        tracing::trace!("Draining rustls stream done: drained {filled} bytes");
-        drained.resize(filled, 0);
-        Some(drained)
-    };
-    Ok(maybe_drained)
-}
-
-fn setup_inner<Fd: AsFd>(socket: &Fd, conn: Connection) -> Result<(), Error> {
-    let cipher_suite = match conn.negotiated_cipher_suite() {
-        Some(cipher_suite) => cipher_suite,
-        None => {
-            return Err(Error::NoNegotiatedCipherSuite);
-        }
-    };
-
-    let secrets = match conn.dangerous_extract_secrets() {
-        Ok(secrets) => secrets,
-        Err(err) => return Err(Error::ExportSecrets(err)),
-    };
-
-    setup::setup_ulp(socket).map_err(Error::UlpError)?;
-
-    setup::setup_tls_params(socket, cipher_suite, secrets)?;
 
     Ok(())
 }

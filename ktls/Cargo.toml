@@ -15,16 +15,13 @@ readme.workspace = true
 repository.workspace = true
 
 [dependencies]
-futures-util = "0.3.31"
-ktls-sys = "1.0"
+bitflags = "2.9"
 libc = { version = "0.2.175", features = ["const-extern-fn"] }
 log = { version = "0.4.27", optional = true }
 memoffset = "0.9.1"
-num_enum = "0.7.4"
 nix = { version = "0.30.1", features = ["socket", "uio", "net"] }
-pin-project-lite = "0.2.16"
-rustls = { version = "0.23.27", default-features = false }
-smallvec = "1.15"
+pin-project = "1.1"
+rustls = { version = "0.23.31", default-features = false, features = ["std"] }
 thiserror = "2.0"
 tokio = { version = "1.39.2", features = ["net", "macros", "io-util"] }
 tokio-rustls = { version = "0.26.0", default-features = false }

@@ -1,67 +1,62 @@
-use std::os::unix::prelude::RawFd;
+//! Raw FFI wrappers.
 
-use ktls_sys::bindings as ktls;
-use rustls::{
-    internal::msgs::{enums::AlertLevel, message::Message},
-    AlertDescription
-};
+// Since Rust 2021 doesn't have `size_of_val` included in prelude.
+#![allow(unused_qualifications)]
 
-pub(crate) const TLS_1_2_VERSION_NUMBER: u16 = (((ktls::TLS_1_2_VERSION_MAJOR & 0xFF) as u16) << 8)
-    | ((ktls::TLS_1_2_VERSION_MINOR & 0xFF) as u16);
+use std::os::fd::RawFd;
+use std::{io, mem, ptr};
 
-pub(crate) const TLS_1_3_VERSION_NUMBER: u16 = (((ktls::TLS_1_3_VERSION_MAJOR & 0xFF) as u16) << 8)
-    | ((ktls::TLS_1_3_VERSION_MINOR & 0xFF) as u16);
-
-const TLS_SET_RECORD_TYPE: libc::c_int = 1;
-const ALERT: u8 = 0x15;
-
-// Yes, really. cmsg components are aligned to [libc::c_long]
-#[cfg_attr(target_pointer_width = "32", repr(C, align(4)))]
-#[cfg_attr(target_pointer_width = "64", repr(C, align(8)))]
-struct Cmsg<const N: usize> {
-    hdr: libc::cmsghdr,
+#[repr(C)]
+pub(crate) struct Cmsg<const N: usize> {
+    _hdr: libc::cmsghdr,
     data: [u8; N],
 }
 
 impl<const N: usize> Cmsg<N> {
-    fn new(level: i32, typ: i32, data: [u8; N]) -> Self {
-        Self {
-            hdr: libc::cmsghdr {
-                // on Linux this is a usize, on macOS this is a u32
-                #[allow(clippy::unnecessary_cast)]
-                cmsg_len: (memoffset::offset_of!(Self, data) + N) as _,
-                cmsg_level: level,
-                cmsg_type: typ,
-            },
-            data,
-        }
+    #[allow(trivial_numeric_casts)]
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_possible_wrap)]
+    pub(crate) fn new(level: i32, typ: i32, data: [u8; N]) -> Self {
+        #[allow(unsafe_code)]
+        // SAFETY: zeroed is fine for cmsghdr as we will set all the fields we use.
+        let mut hdr = unsafe { mem::zeroed::<libc::cmsghdr>() };
+
+        hdr.cmsg_level = level;
+        hdr.cmsg_type = typ;
+        // For MUSL target, this is u32.
+        hdr.cmsg_len = (memoffset::offset_of!(Self, data) + N) as _;
+
+        Self { _hdr: hdr, data }
     }
 }
 
-pub fn send_close_notify(fd: RawFd) -> std::io::Result<()> {
-    let mut data = vec![];
-    Message::build_alert(AlertLevel::Warning, AlertDescription::CloseNotify)
-        .payload
-        .encode(&mut data);
+#[allow(trivial_numeric_casts)]
+#[allow(clippy::cast_possible_truncation)]
+#[allow(clippy::cast_possible_wrap)]
+/// A wrapper around [`libc::sendmsg`].
+pub(crate) fn sendmsg<const N: usize>(
+    fd: RawFd,
+    data: &mut [io::IoSlice<'_>],
+    cmsg: &mut Cmsg<N>,
+    flags: i32,
+) -> io::Result<usize> {
+    #[allow(unsafe_code)]
+    // SAFETY: zeroed is fine for msghdr as we will set all the fields we use.
+    let mut msghdr: libc::msghdr = unsafe { mem::zeroed() };
 
-    let mut cmsg = Cmsg::new(SOL_TLS, TLS_SET_RECORD_TYPE, [ALERT]);
+    msghdr.msg_control = ptr::from_mut(cmsg).cast();
+    msghdr.msg_controllen = mem::size_of_val(cmsg) as _;
+    msghdr.msg_iov = ptr::from_mut(data).cast();
+    msghdr.msg_iovlen = data.len() as _;
 
-    let msg = libc::msghdr {
-        msg_name: std::ptr::null_mut(),
-        msg_namelen: 0,
-        msg_iov: &mut libc::iovec {
-            iov_base: data.as_mut_ptr() as _,
-            iov_len: data.len(),
-        },
-        msg_iovlen: 1,
-        msg_control: &mut cmsg as *mut _ as *mut _,
-        msg_controllen: cmsg.hdr.cmsg_len,
-        msg_flags: 0,
-    };
+    #[allow(unsafe_code)]
+    // SAFETY: syscall
+    let ret = unsafe { libc::sendmsg(fd, &msghdr, flags) };
 
-    let ret = unsafe { libc::sendmsg(fd, &msg, 0) };
-    if ret < 0 {
-        return Err(std::io::Error::last_os_error());
+    if ret >= 0 {
+        #[allow(clippy::cast_sign_loss)]
+        Ok(ret as usize)
+    } else {
+        Err(io::Error::last_os_error())
     }
-    Ok(())
 }
