@@ -17,6 +17,9 @@ on:
         description: "Space-separated list of Linux kernel versions to test (e.g., '6.12 6.6 6.1.148 5.15.189 5.10.240 5.4.296')"
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   prepare-matrix:
     runs-on: ubuntu-latest
@@ -26,9 +29,9 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          if [ -n "${{ github.event.inputs.kernel_versions }}" ]; then
+          if [ -n "${GITHUB_EVENT_INPUTS_KERNEL_VERSIONS}" ]; then
             # Manual trigger with custom versions
-            versions="${{ github.event.inputs.kernel_versions }}"
+            versions="${GITHUB_EVENT_INPUTS_KERNEL_VERSIONS}"
             echo "Using manual input versions: $versions"
           else
             # Default versions for push events
@@ -40,6 +43,8 @@ jobs:
           json_array=$(echo "$versions" | tr ' ' '\n' | jq -R . | jq -s -c .)
           echo "matrix={\"kernel_version\":$json_array}" >> $GITHUB_OUTPUT
           echo "Generated matrix: {\"kernel_version\":$json_array}"
+        env:
+          GITHUB_EVENT_INPUTS_KERNEL_VERSIONS: ${{ github.event.inputs.kernel_versions }}
 
   build:
     needs: prepare-matrix
@@ -52,6 +57,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install dependencies
         run: |
@@ -165,7 +172,7 @@ jobs:
         run: |
           qemu-system-x86_64 \
             -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
-            -kernel linux-${{ env.KERNEL_VERSION }}/arch/x86/boot/bzImage \
+            -kernel linux-${KERNEL_VERSION}/arch/x86/boot/bzImage \
             -initrd initramfs.cpio.gz \
             -netdev user,id=net0 \
             -device e1000,netdev=net0 \
