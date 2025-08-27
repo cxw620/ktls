@@ -14,6 +14,10 @@ license.workspace = true
 readme.workspace = true
 repository.workspace = true
 
+[package.metadata.docs.rs]
+features = ["tls12", "async-io-tokio", "raw-api"]
+targets = ["x86_64-unknown-linux-gnu"]
+
 [dependencies]
 bitflags = "2.9"
 libc = { version = "0.2.175", features = ["const-extern-fn"] }
