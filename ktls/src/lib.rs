@@ -28,3 +28,6 @@ mod protocol;
 pub mod setup;
 pub mod stream;
 pub mod utils;
+
+pub use error::Error;
+pub use stream::KtlsStream;
