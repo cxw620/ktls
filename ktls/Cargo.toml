@@ -1,16 +1,18 @@
 [package]
 name = "ktls"
 version = "6.0.2"
-edition = "2021"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/rustls/ktls"
-documentation = "https://docs.rs/ktls"
-authors = ["Amos Wenger <amos@bearcove.net>"]
-readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+# === Publication info ===
+authors.workspace = true
+categories.workspace = true
 description = """
 Configures kTLS for tokio-rustls client and server connections.
 """
-rust-version = "1.75"
+keywords.workspace = true
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
 
 [dependencies]
 futures-util = "0.3.31"
