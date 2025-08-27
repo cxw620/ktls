@@ -341,6 +341,7 @@ dependencies = [
  "ktls-sys 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static",
  "libc",
+ "log",
  "memoffset",
  "nix",
  "num_enum",
