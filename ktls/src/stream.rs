@@ -6,6 +6,8 @@ pub mod impl_std;
 #[cfg(feature = "async-io-tokio")]
 pub mod impl_tokio;
 
+#[cfg(feature = "raw-api")]
+use std::io;
 use std::os::fd::AsFd;
 use std::pin::Pin;
 
@@ -13,6 +15,8 @@ use rustls::client::UnbufferedClientConnection;
 use rustls::server::UnbufferedServerConnection;
 
 use crate::error::Error;
+#[cfg(feature = "raw-api")]
+use crate::stream::context::Buffer;
 use crate::stream::context::{Context, StreamState, TlsConnData};
 
 const DEFAULT_SCRATCH_CAPACITY: usize = 64;
@@ -185,5 +189,76 @@ where
         }
 
         Ok(this)
+    }
+
+    #[allow(unsafe_code)]
+    #[cfg(feature = "raw-api")]
+    #[inline]
+    /// Returns a mutable reference to the inner socket if the TLS stream is not
+    /// closed (unidirectionally or bidirectionally).
+    ///
+    /// This requires a mutable reference to the [`KtlsStream`] to ensure a
+    /// exclusive access to the inner socket.
+    ///
+    /// ## Safety
+    ///
+    /// The caller must ensure that:
+    ///
+    /// * All buffered data **MUST** be retrieved using
+    ///   [`Self::take_buffered_data`] and properly consumed before accessing
+    ///   the inner socket. Buffered data typically consists of:
+    ///
+    ///   - Early data received during handshake.
+    ///   - Application data received due to improper usage of
+    ///     [`Self::handle_io_result`].
+    ///
+    /// * The caller **MAY** handle any [`io::Result`]s returned by I/O
+    ///   operations on the inner socket with [`Self::handle_io_result`].
+    ///
+    /// * The caller **MUST NOT** shutdown the inner socket directly, which will
+    ///   lead to undefined behaviours. Instead, the caller **MAY** call
+    ///   `(poll_)shutdown` explictly on the [`KtlsStream`] to gracefully
+    ///   shutdown the TLS stream (with `close_notify` be sent) manually, or
+    ///   just drop the stream to do automatic graceful shutdown.
+    ///
+    /// [RFC 8446, section 6.1]: https://tools.ietf.org/html/rfc8446#section-6.1
+    pub unsafe fn as_raw(&mut self) -> Option<&mut S> {
+        debug_assert!(
+            !self.ctx.state().has_buffered_data(),
+            "Buffered data must be consumed before accessing the inner stream."
+        );
+
+        if self.ctx.state().is_partially_closed() {
+            return None;
+        }
+
+        Some(&mut self.inner)
+    }
+
+    #[cfg(feature = "raw-api")]
+    /// Inspects and handles the [`io::Result`] returned by a I/O operation on
+    /// the inner socket directly.
+    ///
+    /// - If the result is `Ok`, it returns `Some(T)`.
+    /// - If the errno is [`EIO`](libc::EIO), it tries to handle any TLS control messages
+    ///   received, and returns `None` if succeeded.
+    /// - Otherwise, it aborts the connection with `internal_error` alert and
+    ///   returns the error.
+    ///
+    /// ## Errors
+    ///
+    /// The unrecoverable original [`io::Error`].
+    pub fn handle_io_result<T>(&mut self, ret: io::Result<T>) -> io::Result<Option<T>> {
+        self.ctx.handle_io_result(&self.inner, ret)
+    }
+
+    #[cfg(feature = "raw-api")]
+    #[must_use = "The buffered data must be handled."]
+    /// Takes the buffered data, if any, and resets the buffer state.
+    ///
+    /// This method is useful and should be called before performing low-level
+    /// I/O operations on the inner socket.
+    pub fn take_buffered_data(&mut self) -> Option<Buffer> {
+        self.ctx.take_buffer()
     }
 }
