@@ -24,7 +24,7 @@ impl<const N: usize> Cmsg<N> {
         hdr.cmsg_level = level;
         hdr.cmsg_type = typ;
         // For MUSL target, this is u32.
-        hdr.cmsg_len = (memoffset::offset_of!(Self, data) + N) as _;
+        hdr.cmsg_len = (mem::offset_of!(Self, data) + N) as _;
 
         Self { _hdr: hdr, data }
     }

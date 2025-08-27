@@ -1,5 +1,7 @@
 //! See [`KtlsStream`].
 
+#![allow(clippy::module_name_repetitions)]
+
 pub mod context;
 pub mod error;
 pub mod impl_std;
@@ -240,8 +242,8 @@ where
     /// the inner socket directly.
     ///
     /// - If the result is `Ok`, it returns `Some(T)`.
-    /// - If the errno is [`EIO`](libc::EIO), it tries to handle any TLS control messages
-    ///   received, and returns `None` if succeeded.
+    /// - If the errno is [`EIO`](libc::EIO), it tries to handle any TLS control
+    ///   messages received, and returns `None` if succeeded.
     /// - Otherwise, it aborts the connection with `internal_error` alert and
     ///   returns the error.
     ///
