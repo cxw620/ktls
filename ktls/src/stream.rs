@@ -3,6 +3,8 @@
 pub mod context;
 pub mod error;
 pub mod impl_std;
+#[cfg(feature = "async-io-tokio")]
+pub mod impl_tokio;
 
 use std::os::fd::AsFd;
 use std::pin::Pin;

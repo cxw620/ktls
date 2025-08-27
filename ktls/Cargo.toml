@@ -23,8 +23,7 @@ nix = { version = "0.30.1", features = ["socket", "uio", "net"] }
 pin-project = "1.1"
 rustls = { version = "0.23.31", default-features = false, features = ["std"] }
 thiserror = "2.0"
-tokio = { version = "1.39.2", features = ["net", "macros", "io-util"] }
-tokio-rustls = { version = "0.26.0", default-features = false }
+tokio = { version = "1.40", optional = true }
 tracing = { version = "0.1.41", optional = true }
 
 [dev-dependencies]
@@ -37,14 +36,17 @@ tokio = { version = "1.39.2", features = ["full"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 
 [features]
-default = ["aws_lc_rs", "tls12"]
-aws_lc_rs = ["rustls/aws_lc_rs", "tokio-rustls/aws_lc_rs"]
-aws-lc-rs = ["aws_lc_rs"]                                  # Alias because Cargo features commonly use `-`
-ring = ["rustls/ring", "tokio-rustls/ring"]
-tls12 = ["rustls/tls12", "tokio-rustls/tls12"]
+default = ["aws_lc_rs", "tls12", "async-io-tokio"]
+aws_lc_rs = ["rustls/aws_lc_rs"]
+aws-lc-rs = ["aws_lc_rs"]                          # Alias because Cargo features commonly use `-`
+ring = ["rustls/ring"]
+tls12 = ["rustls/tls12"]
 
 # Expose some low-level APIs
 raw-api = []
+
+# Implements tokio's `AsyncRead` and `AsyncWrite` traits for `KtlsStream`
+async-io-tokio = ["dep:tokio"]
 
 # Logging support with `log` crate
 log = ["dep:log"]
