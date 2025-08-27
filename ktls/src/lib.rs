@@ -50,6 +50,7 @@ use tokio::{
 
 mod ffi;
 pub mod log;
+mod protocol;
 
 mod async_read_ready;
 pub use async_read_ready::AsyncReadReady;
