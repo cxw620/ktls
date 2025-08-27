@@ -1,16 +1,15 @@
 [package]
 name = "ktls"
 version = "6.0.2"
-edition = "2021"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/rustls/ktls"
-documentation = "https://docs.rs/ktls"
-authors = ["Amos Wenger <amos@bearcove.net>"]
-readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
 description = """
 Configures kTLS for tokio-rustls client and server connections.
 """
-rust-version = "1.75"
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
 
 [dependencies]
 libc = { version = "0.2.155", features = ["const-extern-fn"] }
