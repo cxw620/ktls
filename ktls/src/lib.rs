@@ -21,7 +21,8 @@
 #[cfg(not(target_os = "linux"))]
 compile_error!("This crate only supports Linux");
 
-use ffi::{setup_tls_info, setup_ulp, KtlsCompatibilityError};
+pub mod setup;
+
 use futures_util::future::try_join_all;
 use ktls_sys::bindings as sys;
 use rustls::{Connection, SupportedCipherSuite, SupportedProtocolVersion};
@@ -48,7 +49,6 @@ use tokio::{
 };
 
 mod ffi;
-pub use crate::ffi::CryptoInfo;
 
 mod async_read_ready;
 pub use async_read_ready::AsyncReadReady;
@@ -245,9 +245,6 @@ pub enum Error {
     #[error("failed to enable TLS ULP (upper level protocol): {0}")]
     UlpError(#[source] std::io::Error),
 
-    #[error("kTLS compatibility error: {0}")]
-    KtlsCompatibility(#[from] KtlsCompatibilityError),
-
     #[error("failed to export secrets")]
     ExportSecrets(#[source] rustls::Error),
 
@@ -300,7 +297,7 @@ where
     let (io, conn) = stream.into_inner();
     let io = io.io;
 
-    setup_inner(io.as_raw_fd(), Connection::Client(conn))?;
+    setup_inner(io, Connection::Client(conn))?;
     Ok(KtlsStream::new(io, drained))
 }
 
@@ -343,7 +340,7 @@ async fn drain(stream: &mut (impl AsyncRead + Unpin)) -> std::io::Result<Option<
     Ok(maybe_drained)
 }
 
-fn setup_inner(fd: RawFd, conn: Connection) -> Result<(), Error> {
+fn setup_inner<Fd: AsFd>(socket: &Fd, conn: Connection) -> Result<(), Error> {
     let cipher_suite = match conn.negotiated_cipher_suite() {
         Some(cipher_suite) => cipher_suite,
         None => {
@@ -356,13 +353,9 @@ fn setup_inner(fd: RawFd, conn: Connection) -> Result<(), Error> {
         Err(err) => return Err(Error::ExportSecrets(err)),
     };
 
-    ffi::setup_ulp(fd).map_err(Error::UlpError)?;
+    setup::setup_ulp(socket).map_err(Error::UlpError)?;
 
-    let tx = CryptoInfo::from_rustls(cipher_suite, secrets.tx)?;
-    setup_tls_info(fd, ffi::Direction::Tx, tx)?;
-
-    let rx = CryptoInfo::from_rustls(cipher_suite, secrets.rx)?;
-    setup_tls_info(fd, ffi::Direction::Rx, rx)?;
+    setup::setup_tls_params(socket, cipher_suite, secrets)?;
 
     Ok(())
 }
