@@ -33,11 +33,8 @@ pub fn setup_ulp<S: AsFd>(socket: S) -> Result<S, SetupError<S>> {
 }
 
 #[allow(clippy::exhaustive_structs)]
-#[derive(thiserror::Error)]
-#[error("{error}")]
 /// An error that occurred while configuring the ULP.
 pub struct SetupError<S> {
-    #[source]
     /// The I/O error that occurred while configuring the ULP.
     pub error: io::Error,
 
@@ -48,5 +45,17 @@ pub struct SetupError<S> {
 impl<S> fmt::Debug for SetupError<S> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.error.fmt(f)
+    }
+}
+
+impl<S> fmt::Display for SetupError<S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.error)
+    }
+}
+
+impl<S> std::error::Error for SetupError<S> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.error)
     }
 }

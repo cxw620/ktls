@@ -1,25 +1,50 @@
 //! Error types for the `ktls` crate
 
-use std::io;
+use std::{fmt, io};
 
 use rustls::SupportedCipherSuite;
 
 #[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug)]
 /// Unified error type for this crate
 pub enum Error {
-    #[error(transparent)]
     /// Invalid crypto material, e.g., wrong size key or IV.
-    InvalidCryptoInfo(#[from] InvalidCryptoInfo),
+    InvalidCryptoInfo(InvalidCryptoInfo),
 
-    #[error("failed to extract connection secrets from rustls connection: {0}")]
     /// Failed to extract connection secrets from rustls connection, e.g., not
     /// have `config.enable_secret_extraction` set to true
-    ExtractSecrets(#[source] rustls::Error),
+    ExtractSecrets(rustls::Error),
 
-    #[error(transparent)]
     /// General IO error.
-    IO(#[from] io::Error),
+    IO(io::Error),
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidCryptoInfo(e) => e.fmt(f),
+            Self::ExtractSecrets(e) => {
+                write!(f, "failed to extract secrets from rustls connection: {e}")
+            }
+            Self::IO(e) => e.fmt(f),
+        }
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::InvalidCryptoInfo(_) => None,
+            Self::ExtractSecrets(e) => Some(e),
+            Self::IO(e) => Some(e),
+        }
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(error: io::Error) -> Self {
+        Self::IO(error)
+    }
 }
 
 impl From<Error> for io::Error {
@@ -31,20 +56,37 @@ impl From<Error> for io::Error {
     }
 }
 
-#[derive(Debug)]
-#[derive(thiserror::Error)]
-/// Crypto material is invalid, e.g., wrong size key or IV.
+impl From<InvalidCryptoInfo> for Error {
+    fn from(error: InvalidCryptoInfo) -> Self {
+        Self::InvalidCryptoInfo(error)
+    }
+}
+
 #[non_exhaustive]
+#[derive(Debug)]
+/// Crypto material is invalid, e.g., wrong size key or IV.
 pub enum InvalidCryptoInfo {
-    #[error("Wrong size key")]
     /// The provided key has an incorrect size (unlikely).
     WrongSizeKey,
 
-    #[error("Wrong size iv")]
     /// The provided IV has an incorrect size (unlikely).
     WrongSizeIv,
 
-    #[error("the negotiated cipher suite [{0:?}] is not supported")]
     /// The negotiated cipher suite is not supported by this crate.
     UnsupportedCipherSuite(SupportedCipherSuite),
+}
+
+impl fmt::Display for InvalidCryptoInfo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::WrongSizeKey => write!(f, "wrong size key"),
+            Self::WrongSizeIv => write!(f, "wrong size iv"),
+            Self::UnsupportedCipherSuite(suite) => {
+                write!(
+                    f,
+                    "the negotiated cipher suite [{suite:?}] is not supported"
+                )
+            }
+        }
+    }
 }
