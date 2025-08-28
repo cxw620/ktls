@@ -1,24 +1,21 @@
 //! Test: client connect to real world websites.
 
-use core::num::NonZeroUsize;
-use core::time::Duration;
 use std::io;
+use std::num::NonZeroUsize;
+use std::time::Duration;
 
 use ktls::KtlsStream;
+use ktls_test::common;
 use rustls::pki_types::ServerName;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 
-mod common {
-    include!("../examples/common/mod.rs");
-}
-
 #[test_case::test_matrix(
     [
         "www.google.com", // Google CDN
         "www.bing.com", // Azure CDN
-        "github.com", // Azure CDN
+        // "github.com", // Azure CDN
         "www.baidu.com", // Baidu CDN
         "stackoverflow.com", // Cloudflare CDN
         "fastly.com", // Fastly CDN

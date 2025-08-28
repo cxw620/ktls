@@ -59,8 +59,8 @@ jobs:
         with:
           tool: just
       - run: just build --package ktls
-      - run: just build --package ktls --features raw-api
       - run: just build --package ktls-sys
+      - run: just build --package ktls-test
       - run: just build --package ktls-util
 
   doc:

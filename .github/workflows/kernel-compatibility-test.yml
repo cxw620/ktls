@@ -76,7 +76,7 @@ jobs:
 
       - name: Generate the test binary
         run: |
-          cargo build --package ktls --example client --features tracing --release --target x86_64-unknown-linux-musl
+          cargo build --package ktls-test --example client --release --target x86_64-unknown-linux-musl
 
       - name: Cache Linux source
         id: cache-kernel

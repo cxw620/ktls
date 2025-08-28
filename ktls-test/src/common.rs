@@ -17,6 +17,7 @@ pub mod client;
 pub mod server;
 
 #[allow(dead_code)]
+#[tracing::instrument(err)]
 /// Echo test, shared by examples and tests.
 pub async fn run_echo_test(close_party: CloseParty, test_option: TestOption) -> io::Result<()> {
     let _ = tracing_subscriber::fmt()
@@ -65,7 +66,7 @@ pub async fn run_echo_test(close_party: CloseParty, test_option: TestOption) -> 
 
         ktls_stream.read_exact(&mut buf).await?;
 
-        assert!(buf == &test_data[..16]);
+        assert!(buf == test_data[..16]);
     }
 
     {
@@ -78,7 +79,7 @@ pub async fn run_echo_test(close_party: CloseParty, test_option: TestOption) -> 
 
         ktls_stream.read_exact(&mut buf).await?;
 
-        assert!(buf == &test_data[..16]);
+        assert!(buf == test_data[..16]);
     }
 
     {
@@ -108,7 +109,7 @@ pub async fn run_echo_test(close_party: CloseParty, test_option: TestOption) -> 
 
         ktls_stream.read_exact(&mut buf).await?;
 
-        assert!(buf == &test_data[..TOTAL]);
+        assert!(buf == test_data[..TOTAL]);
     }
 
     {
@@ -157,6 +158,8 @@ pub async fn run_echo_test(close_party: CloseParty, test_option: TestOption) -> 
         }
     }
 
+    tracing::info!("Echo test completed: {:#?}", compatible_cipher_suites);
+
     Ok(())
 }
 
@@ -164,10 +167,10 @@ pub async fn run_echo_test(close_party: CloseParty, test_option: TestOption) -> 
 #[derive(Debug, Clone, Copy)]
 /// Which party will close the connection actively.
 pub enum CloseParty {
-    ///
+    /// The client
     Client,
 
-    ///
+    /// The server
     Server,
 }
 

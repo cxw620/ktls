@@ -2,9 +2,7 @@
 
 use std::io;
 
-mod common {
-    include!("../examples/common/mod.rs");
-}
+use ktls_test::common;
 
 #[test_case::test_matrix(
     [

@@ -1,8 +1,8 @@
 //! Example: TLS client using `ktls`.
 
-mod common;
-
 use std::error::Error;
+
+use ktls_test::common;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {

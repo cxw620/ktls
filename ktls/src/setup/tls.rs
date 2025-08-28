@@ -1,6 +1,7 @@
 //! See the [module-level documentation](crate::setup) for more details.
 
 #![allow(rustdoc::private_intra_doc_links)]
+#![allow(unreachable_pub)]
 
 use std::os::fd::{AsFd, AsRawFd};
 use std::{io, mem};
@@ -13,7 +14,6 @@ use rustls::{ConnectionTrafficSecrets, ExtractedSecrets, SupportedCipherSuite};
 
 use crate::error::{Error, InvalidCryptoInfo};
 
-#[cfg_attr(not(feature = "raw-api"), allow(unreachable_pub))]
 /// Sets the kTLS parameters on the socket after the TLS handshake is completed.
 ///
 /// ## Errors
@@ -33,7 +33,6 @@ pub fn setup_tls_params<S: AsFd>(
         .map_err(Error::IO)
 }
 
-#[cfg_attr(not(feature = "raw-api"), allow(unreachable_pub))]
 /// Like [`setup_tls_params`], but only sets up the transmit direction.
 ///
 /// This is useful when performing key update.
@@ -53,7 +52,6 @@ pub fn setup_tls_params_tx<S: AsFd>(
         .map_err(Error::IO)
 }
 
-#[cfg_attr(not(feature = "raw-api"), allow(unreachable_pub))]
 /// Like [`setup_tls_params`], but only sets up the receive direction.
 ///
 /// This is useful when performing key update.
@@ -106,21 +104,17 @@ impl<const DIRECTION: c_int> SetSockOpt for TcpTls<DIRECTION> {
     }
 }
 
-#[cfg_attr(not(feature = "raw-api"), allow(unreachable_pub))]
 #[repr(transparent)]
 /// Sets the Kernel TLS read/write parameters on the TCP socket.
 pub struct TlsCryptoInfo<const DIRECTION: c_int = 0>(TlsCryptoInfoImpl);
 
-#[cfg_attr(not(feature = "raw-api"), allow(unreachable_pub))]
 /// See [`TlsCryptoInfo`].
 pub type TlsCryptoInfoTx = TlsCryptoInfo<{ libc::TLS_TX }>;
 
-#[cfg_attr(not(feature = "raw-api"), allow(unreachable_pub))]
 /// See [`TlsCryptoInfo`].
 pub type TlsCryptoInfoRx = TlsCryptoInfo<{ libc::TLS_RX }>;
 
 #[cfg(any(feature = "raw-api", feature = "probe-ktls-compatibility"))]
-#[allow(unreachable_pub)]
 impl<const DIRECTION: c_int> TlsCryptoInfo<DIRECTION> {
     /// Create a custom [`TlsCryptoInfo`] from the given
     /// [`libc::tls12_crypto_info_aes_gcm_128`].

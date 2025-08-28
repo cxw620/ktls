@@ -8,6 +8,7 @@ use rustls::DigitallySignedStruct;
 pub struct NoCertificateVerification;
 
 impl NoCertificateVerification {
+    #[must_use]
     pub fn new() -> Arc<Self> {
         Arc::new(Self)
     }

@@ -16,6 +16,7 @@ use rustls::client::UnbufferedClientConnection;
 use rustls::server::UnbufferedServerConnection;
 
 use crate::error::Error;
+use crate::setup::tls::setup_tls_params;
 #[cfg(feature = "raw-api")]
 use crate::stream::context::Buffer;
 use crate::stream::context::{Context, StreamState, TlsConnData};
@@ -112,18 +113,12 @@ where
 
         let supported_cipher_suite = conn.negotiated_cipher_suite();
 
-        let mut this = Self {
+        let this = Self {
             inner: socket,
             ctx: Context::new(StreamState::empty(), Vec::new(), TlsConnData::Client(conn)),
         };
 
-        let ret = crate::setup::setup_tls_params(&this.inner, supported_cipher_suite, secrets);
-
-        if ret.is_err() {
-            this.ctx.shutdown(&this.inner);
-
-            ret?;
-        }
+        setup_tls_params(&this.inner, supported_cipher_suite, secrets)?;
 
         Ok(this)
     }
@@ -172,18 +167,12 @@ where
             ),
         };
 
-        let mut this = Self {
+        let this = Self {
             inner: socket,
             ctx: Context::new(state, buffer, TlsConnData::Server(conn)),
         };
 
-        let ret = crate::setup::setup_tls_params(&this.inner, supported_cipher_suite, secrets);
-
-        if ret.is_err() {
-            this.ctx.shutdown(&this.inner);
-
-            ret?;
-        }
+        setup_tls_params(&this.inner, supported_cipher_suite, secrets)?;
 
         Ok(this)
     }

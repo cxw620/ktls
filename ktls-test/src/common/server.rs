@@ -1,4 +1,4 @@
-//! Example: TLS server using `ktls`.
+//! Server
 
 #![allow(dead_code)]
 

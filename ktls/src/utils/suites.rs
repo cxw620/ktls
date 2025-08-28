@@ -1,4 +1,4 @@
-//! kTLS cipher suite compatibility probe
+//! See [`CompatibleCipherSuites`]
 
 use std::collections::HashSet;
 use std::io;
@@ -6,7 +6,8 @@ use std::net::{TcpListener, TcpStream};
 
 use rustls::{CipherSuite, SupportedCipherSuite, SupportedProtocolVersion};
 
-use crate::setup::{setup_ulp, SetupError, TlsCryptoInfoTx};
+use crate::setup::tls::TlsCryptoInfoTx;
+use crate::setup::ulp::{setup_ulp, SetupError};
 
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone)]
@@ -19,11 +20,9 @@ pub struct CompatibleCipherSuites {
 }
 
 impl CompatibleCipherSuites {
-    /// Probes the current Linux kernel for kTLS cipher suite compatibility.
+    /// Probes the current Linux kernel for kTLS cipher suites compatibility.
     ///
-    /// Returns `None` if the kernel does not support kTLS, otherwise returns
-    /// a `CompatibleCipherSuites` containing supported cipher suites and
-    /// protocol versions.
+    /// Returns `None` if the kernel does not support kTLS.
     ///
     /// # Notes
     ///

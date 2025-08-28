@@ -15,7 +15,7 @@ readme.workspace = true
 repository.workspace = true
 
 [package.metadata.docs.rs]
-features = ["tls12", "async-io-tokio", "raw-api"]
+features = ["tls12", "async-io-tokio", "raw-api", "probe-ktls-compatibility"]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
@@ -27,16 +27,6 @@ pin-project-lite = "0.2.16"
 rustls = { version = "0.23.31", default-features = false, features = ["std"] }
 tokio = { version = "1.40", optional = true }
 tracing = { version = "0.1.41", optional = true }
-
-[dev-dependencies]
-ktls-util = { path = "../ktls-util", default-features = false, features = ["tls12", "ring"] }
-rand = "0.9.2"
-rcgen = { version = "0.14.3" }
-rustls = { version = "0.23.27", default-features = false, features = ["std", "ring"] }
-test-case = "3.3.1"
-tokio = { version = "1.40", features = ["io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["env-filter", "parking_lot"] }
 
 [features]
 default = ["tls12", "async-io-tokio"]

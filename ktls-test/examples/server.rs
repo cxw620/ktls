@@ -1,8 +1,7 @@
 //! Example: TLS server using `ktls`.
 
+use ktls_test::common;
 use tokio::net::TcpListener;
-
-mod common;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

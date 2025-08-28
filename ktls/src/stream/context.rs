@@ -17,7 +17,7 @@ use rustls::{
 };
 
 use crate::protocol::{KeyUpdateRequest, KEY_UPDATE_NOT_REQUESTED, KEY_UPDATE_REQUESTED};
-use crate::setup::{setup_tls_params_rx, setup_tls_params_tx};
+use crate::setup::tls::{setup_tls_params_rx, setup_tls_params_tx};
 use crate::stream::error::KtlsStreamError;
 
 /// Helper macro to handle the return value of an I/O operation on the

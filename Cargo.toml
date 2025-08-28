@@ -1,5 +1,5 @@
 [workspace]
-members = ["ktls", "ktls-sys", "ktls-util"]
+members = ["ktls", "ktls-sys", "ktls-test", "ktls-util"]
 resolver = "2"
 
 [workspace.package]

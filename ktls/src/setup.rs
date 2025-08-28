@@ -19,13 +19,11 @@
 
 #![allow(clippy::module_name_repetitions)]
 
-mod tls;
-mod ulp;
+pub(crate) mod tls;
+pub(crate) mod ulp;
 
 #[cfg(feature = "raw-api")]
 pub use tls::{
     setup_tls_params, setup_tls_params_rx, setup_tls_params_tx, TlsCryptoInfoRx, TlsCryptoInfoTx,
 };
-#[cfg(not(feature = "raw-api"))]
-pub(crate) use tls::{setup_tls_params, setup_tls_params_rx, setup_tls_params_tx, TlsCryptoInfoTx};
 pub use ulp::{setup_ulp, SetupError};
