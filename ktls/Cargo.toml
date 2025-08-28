@@ -39,7 +39,7 @@ tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "parking_lot"] }
 
 [features]
-default = ["tls12", "async-io-tokio", "probe-ktls-compatibility"]
+default = ["tls12", "async-io-tokio"]
 
 # Enable rustls TLS 1.2 support
 tls12 = ["rustls/tls12"]

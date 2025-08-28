@@ -12,13 +12,13 @@ repository.workspace = true
 publish = false               # Currently for test only
 
 [dependencies]
-ktls = { path = "../ktls", default-features = false, features = ["raw-api"] }
+ktls = { path = "../ktls", default-features = false }
 rustls = { version = "0.23.27", default-features = false, features = ["std"] }
 thiserror = "2.0.16"
 tokio = { version = "1.40", features = ["io-util"] }
 
 [features]
-default = ["tls12", "aws-lc-rs"]
+default = ["tls12", "ring"]
 
 # Enable rustls TLS 1.2 support
 tls12 = ["ktls/tls12", "rustls/tls12"]
