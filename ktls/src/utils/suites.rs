@@ -4,8 +4,9 @@ use std::collections::HashSet;
 use std::io;
 use std::net::{TcpListener, TcpStream};
 
-use crate::setup::{setup_ulp, SetupError, TlsCryptoInfoTx};
 use rustls::{CipherSuite, SupportedCipherSuite, SupportedProtocolVersion};
+
+use crate::setup::{setup_ulp, SetupError, TlsCryptoInfoTx};
 
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone)]
