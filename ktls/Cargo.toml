@@ -13,19 +13,19 @@ Configures kTLS for tokio-rustls client and server connections.
 rust-version = "1.75"
 
 [dependencies]
-libc = { version = "0.2.155", features = ["const-extern-fn"] }
-thiserror = "2"
-tracing = "0.1.40"
-tokio-rustls = { default-features = false, version = "0.26.0" }
-rustls = { version = "0.23.12", default-features = false }
-smallvec = "1.13.2"
+futures-util = "0.3.31"
+ktls-sys = "1.0"
+libc = { version = "0.2.175", features = ["const-extern-fn"] }
 memoffset = "0.9.1"
-pin-project-lite = "0.2.14"
+num_enum = "0.7.4"
+nix = { version = "0.30.1", features = ["socket", "uio", "net"] }
+pin-project-lite = "0.2.16"
+rustls = { version = "0.23.27", default-features = false }
+smallvec = "1.15"
+thiserror = "2.0"
 tokio = { version = "1.39.2", features = ["net", "macros", "io-util"] }
-ktls-sys = "1.0.1"
-num_enum = "0.7.3"
-futures-util = "0.3.30"
-nix = { version = "0.29.0", features = ["socket", "uio", "net"] }
+tokio-rustls = { version = "0.26.0", default-features = false }
+tracing = "0.1.41"
 
 [dev-dependencies]
 lazy_static = "1.5.0"
