@@ -11,6 +11,8 @@ use nix::sys::socket::{setsockopt, SetSockOpt};
 use rustls::crypto::cipher::NONCE_LEN;
 use rustls::{ConnectionTrafficSecrets, ExtractedSecrets, SupportedCipherSuite};
 
+use crate::error::{Error, InvalidCryptoInfo};
+
 #[cfg_attr(not(feature = "raw-api"), allow(unreachable_pub))]
 /// Sets the kTLS parameters on the socket after the TLS handshake is completed.
 ///
@@ -22,12 +24,13 @@ pub fn setup_tls_params<S: AsFd>(
     socket: &S,
     cipher_suite: SupportedCipherSuite,
     secrets: ExtractedSecrets,
-) -> io::Result<()> {
+) -> Result<(), Error> {
     let (tx, rx) = TlsCryptoInfo::extract_from(cipher_suite, secrets)?;
 
     setsockopt(socket, TcpTlsTx {}, &tx)
         .and_then(|()| setsockopt(socket, TcpTlsRx {}, &rx))
         .map_err(io::Error::from)
+        .map_err(Error::IO)
 }
 
 #[cfg_attr(not(feature = "raw-api"), allow(unreachable_pub))]
@@ -42,12 +45,12 @@ pub fn setup_tls_params_tx<S: AsFd>(
     socket: &S,
     cipher_suite: SupportedCipherSuite,
     (seq, secrets): (u64, ConnectionTrafficSecrets),
-) -> io::Result<()> {
+) -> Result<(), Error> {
     let tx = TlsCryptoInfoTx::extract_tx_from(cipher_suite, (seq, secrets))?;
 
     setsockopt(socket, TcpTlsTx {}, &tx)
         .map_err(io::Error::from)
-        
+        .map_err(Error::IO)
 }
 
 #[cfg_attr(not(feature = "raw-api"), allow(unreachable_pub))]
@@ -62,12 +65,12 @@ pub fn setup_tls_params_rx<S: AsFd>(
     socket: &S,
     cipher_suite: SupportedCipherSuite,
     (seq, secrets): (u64, ConnectionTrafficSecrets),
-) -> io::Result<()> {
+) -> Result<(), Error> {
     let rx = TlsCryptoInfoRx::extract_rx_from(cipher_suite, (seq, secrets))?;
 
     setsockopt(socket, TcpTlsRx {}, &rx)
         .map_err(io::Error::from)
-        
+        .map_err(Error::IO)
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -141,7 +144,7 @@ impl<const DIRECTION: c_int> TlsCryptoInfo<DIRECTION> {
     }
 
     /// Sets the kTLS parameters on the given file descriptor.
-    pub fn set<Fd: AsFd>(&self, fd: &Fd) -> io::Result<()> {
+    pub fn set<Fd: AsFd>(&self, fd: &Fd) -> Result<(), Error> {
         setsockopt(fd, TcpTls {}, self).map_err(io::Error::from)
     }
 }
@@ -304,29 +307,5 @@ impl TlsCryptoInfoImpl {
                 return Err(InvalidCryptoInfo::UnsupportedCipherSuite(cipher_suite));
             }
         })
-    }
-}
-
-#[derive(Debug)]
-#[derive(thiserror::Error)]
-/// Crypto material is invalid, e.g., wrong size key or IV.
-#[non_exhaustive]
-enum InvalidCryptoInfo {
-    #[error("Wrong size key")]
-    /// The provided key has an incorrect size (unlikely).
-    WrongSizeKey,
-
-    #[error("Wrong size iv")]
-    /// The provided IV has an incorrect size (unlikely).
-    WrongSizeIv,
-
-    #[error("the negotiated cipher suite [{0:?}] is not supported")]
-    /// The negotiated cipher suite is not supported by this crate.
-    UnsupportedCipherSuite(SupportedCipherSuite),
-}
-
-impl From<InvalidCryptoInfo> for io::Error {
-    fn from(err: InvalidCryptoInfo) -> Self {
-        io::Error::new(io::ErrorKind::InvalidInput, err)
     }
 }
