@@ -119,7 +119,8 @@ pub type TlsCryptoInfoTx = TlsCryptoInfo<{ libc::TLS_TX }>;
 /// See [`TlsCryptoInfo`].
 pub type TlsCryptoInfoRx = TlsCryptoInfo<{ libc::TLS_RX }>;
 
-#[cfg(feature = "raw-api")]
+#[cfg(any(feature = "raw-api", feature = "probe-ktls-compatibility"))]
+#[allow(unreachable_pub)]
 impl<const DIRECTION: c_int> TlsCryptoInfo<DIRECTION> {
     /// Create a custom [`TlsCryptoInfo`] from the given
     /// [`libc::tls12_crypto_info_aes_gcm_128`].
@@ -145,7 +146,9 @@ impl<const DIRECTION: c_int> TlsCryptoInfo<DIRECTION> {
 
     /// Sets the kTLS parameters on the given file descriptor.
     pub fn set<Fd: AsFd>(&self, fd: &Fd) -> Result<(), Error> {
-        setsockopt(fd, TcpTls {}, self).map_err(io::Error::from)
+        setsockopt(fd, TcpTls {}, self)
+            .map_err(io::Error::from)
+            .map_err(Error::IO)
     }
 }
 

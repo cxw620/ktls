@@ -36,10 +36,9 @@ tokio = { version = "1.39.2", features = ["full"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 
 [features]
-default = ["aws_lc_rs", "tls12", "async-io-tokio"]
-aws_lc_rs = ["rustls/aws_lc_rs"]
-aws-lc-rs = ["aws_lc_rs"]                          # Alias because Cargo features commonly use `-`
-ring = ["rustls/ring"]
+default = ["tls12", "async-io-tokio", "probe-ktls-compatibility"]
+
+# Enable rustls TLS 1.2 support
 tls12 = ["rustls/tls12"]
 
 # Expose some low-level APIs
@@ -53,3 +52,6 @@ log = ["dep:log"]
 
 # Logging support with `tracing` crate
 tracing = ["dep:tracing"]
+
+# Probes for the compatibility of the current kernel with kTLS
+probe-ktls-compatibility = []
