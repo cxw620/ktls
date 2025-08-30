@@ -24,6 +24,7 @@ use crate::stream::context::{Context, StreamState, TlsConnData};
 const DEFAULT_SCRATCH_CAPACITY: usize = 64;
 
 pin_project_lite::pin_project! {
+    #[derive(Debug)]
     #[project = KTlsStreamProject]
     /// A thin wrapper around an inner socket with kernel TLS (kTLS) offload
     /// configured.
