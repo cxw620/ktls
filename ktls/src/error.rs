@@ -72,7 +72,8 @@ pub enum InvalidCryptoInfo {
     /// The provided IV has an incorrect size (unlikely).
     WrongSizeIv,
 
-    /// The negotiated cipher suite is not supported by this crate.
+    /// The negotiated cipher suite is not supported for ktls by the running
+    /// kernel.
     UnsupportedCipherSuite(SupportedCipherSuite),
 }
 
@@ -84,7 +85,8 @@ impl fmt::Display for InvalidCryptoInfo {
             Self::UnsupportedCipherSuite(suite) => {
                 write!(
                     f,
-                    "the negotiated cipher suite [{suite:?}] is not supported"
+                    "the negotiated cipher suite [{suite:?}] is not supported for ktls by the \
+                     running kernel"
                 )
             }
         }
