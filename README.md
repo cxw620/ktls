@@ -6,8 +6,8 @@
 
 This repository hosts both:
 
-  * [ktls](./ktls): higher-level, safe wrappers over kTLS
-  * [ktls-sys](./ktls-sys): the raw system interface for kTLS on Linux
+  * [ktls](./ktls): high-level APIs for configuring kTLS (kernel TLS offload) on top of [rustls].
+  * [ktls-sys](./ktls-sys): the raw system interface for kTLS on Linux (deprecated).
 
 ## License
 
