@@ -1,5 +1,5 @@
-[![test pipeline](https://github.com/hapsoc/ktls/actions/workflows/test.yml/badge.svg)](https://github.com/hapsoc/ktls/actions/workflows/test.yml?query=branch%3Amain)
-[![Coverage Status (codecov.io)](https://codecov.io/gh/hapsoc/ktls/branch/main/graph/badge.svg)](https://codecov.io/gh/hapsoc/ktls/)
+[![Test pipeline](https://github.com/rustls/ktls/actions/workflows/test.yml/badge.svg)](https://github.com/rustls/ktls/actions/workflows/test.yml?query=branch%3Amain)
+[![Coverage Status (codecov.io)](https://codecov.io/gh/rustls/ktls/branch/main/graph/badge.svg)](https://codecov.io/gh/rustls/ktls/)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE-MIT)
 
 # ktls
