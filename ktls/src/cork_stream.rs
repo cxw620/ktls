@@ -1,4 +1,5 @@
-use std::{io, pin::Pin, task};
+use std::pin::Pin;
+use std::{io, task};
 
 use rustls::internal::msgs::codec::Codec;
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};

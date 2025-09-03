@@ -1,40 +1,34 @@
-use ffi::{setup_tls_info, setup_ulp, KtlsCompatibilityError};
-use futures_util::future::try_join_all;
-use ktls_sys::bindings as sys;
-use rustls::{Connection, SupportedCipherSuite, SupportedProtocolVersion};
-
 #[cfg(all(not(feature = "ring"), not(feature = "aws_lc_rs")))]
 compile_error!("This crate needs wither the 'ring' or 'aws_lc_rs' feature enabled");
 #[cfg(all(feature = "ring", feature = "aws_lc_rs"))]
 compile_error!("The 'ring' and 'aws_lc_rs' features are mutually exclusive");
+
+mod async_read_ready;
+mod cork_stream;
+mod ffi;
+mod ktls_stream;
+
+use std::future::Future;
+use std::io;
+use std::net::SocketAddr;
+use std::os::unix::prelude::{AsRawFd, RawFd};
+
+use futures_util::future::try_join_all;
+use ktls_sys::bindings as sys;
 #[cfg(feature = "aws_lc_rs")]
 use rustls::crypto::aws_lc_rs::cipher_suite;
 #[cfg(feature = "ring")]
 use rustls::crypto::ring::cipher_suite;
-
+use rustls::{Connection, SupportedCipherSuite, SupportedProtocolVersion};
 use smallvec::SmallVec;
-use std::{
-    future::Future,
-    io,
-    net::SocketAddr,
-    os::unix::prelude::{AsRawFd, RawFd},
-};
-use tokio::{
-    io::{AsyncRead, AsyncReadExt, AsyncWrite},
-    net::{TcpListener, TcpStream},
-};
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite};
+use tokio::net::{TcpListener, TcpStream};
 
-mod ffi;
+pub use crate::async_read_ready::AsyncReadReady;
+pub use crate::cork_stream::CorkStream;
 pub use crate::ffi::CryptoInfo;
-
-mod async_read_ready;
-pub use async_read_ready::AsyncReadReady;
-
-mod ktls_stream;
-pub use ktls_stream::KtlsStream;
-
-mod cork_stream;
-pub use cork_stream::CorkStream;
+use crate::ffi::{KtlsCompatibilityError, setup_tls_info, setup_ulp};
+pub use crate::ktls_stream::KtlsStream;
 
 #[derive(Debug, Default)]
 pub struct CompatibleCiphers {
@@ -70,7 +64,9 @@ impl CompatibleCiphers {
             }
         };
 
-        ciphers.test_ciphers(local_addr, accept_conns_fut).await?;
+        ciphers
+            .test_ciphers(local_addr, accept_conns_fut)
+            .await?;
 
         Ok(ciphers)
     }
@@ -252,7 +248,9 @@ where
     IO: AsRawFd + AsyncRead + AsyncReadReady + AsyncWrite + Unpin,
 {
     stream.get_mut().0.corked = true;
-    let drained = drain(&mut stream).await.map_err(Error::DrainError)?;
+    let drained = drain(&mut stream)
+        .await
+        .map_err(Error::DrainError)?;
     let (io, conn) = stream.into_inner();
     let io = io.io;
 
@@ -273,7 +271,9 @@ where
     IO: AsRawFd + AsyncRead + AsyncWrite + Unpin,
 {
     stream.get_mut().0.corked = true;
-    let drained = drain(&mut stream).await.map_err(Error::DrainError)?;
+    let drained = drain(&mut stream)
+        .await
+        .map_err(Error::DrainError)?;
     let (io, conn) = stream.into_inner();
     let io = io.io;
 
@@ -290,7 +290,10 @@ async fn drain(stream: &mut (impl AsyncRead + Unpin)) -> std::io::Result<Option<
 
     loop {
         tracing::trace!("stream.read called");
-        let n = match stream.read(&mut drained[filled..]).await {
+        let n = match stream
+            .read(&mut drained[filled..])
+            .await
+        {
             Ok(n) => n,
             Err(ref e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
                 // actually this is expected for us!

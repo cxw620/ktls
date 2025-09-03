@@ -1,15 +1,11 @@
-use nix::{
-    errno::Errno,
-    sys::socket::{recvmsg, ControlMessageOwned, MsgFlags, SockaddrIn, TlsGetRecordType},
-};
-use num_enum::FromPrimitive;
-use std::{
-    io::{self, IoSliceMut},
-    os::unix::prelude::AsRawFd,
-    pin::Pin,
-    task,
-};
+use std::io::{self, IoSliceMut};
+use std::os::unix::prelude::AsRawFd;
+use std::pin::Pin;
+use std::task;
 
+use nix::errno::Errno;
+use nix::sys::socket::{ControlMessageOwned, MsgFlags, SockaddrIn, TlsGetRecordType, recvmsg};
+use num_enum::FromPrimitive;
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 
 use crate::AsyncReadReady;
@@ -163,7 +159,10 @@ where
                     }
                     TlsGetRecordType::Alert => {
                         // the alert level and description are in iovs
-                        let iov = r.iovs().next().expect("expected data in iovs");
+                        let iov = r
+                            .iovs()
+                            .next()
+                            .expect("expected data in iovs");
 
                         let (level, description) = match iov {
                             [] => {
@@ -230,7 +229,9 @@ where
                         );
                     }
                     TlsGetRecordType::ApplicationData => {
-                        unreachable!("received TLS application in recvmsg, this is supposed to happen in the poll_read codepath")
+                        unreachable!(
+                            "received TLS application in recvmsg, this is supposed to happen in the poll_read codepath"
+                        )
                     }
                     TlsGetRecordType::Unknown(t) => {
                         // just ignore the record?
