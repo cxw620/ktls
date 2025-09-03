@@ -270,7 +270,7 @@ pub fn send_close_notify(fd: RawFd) -> std::io::Result<()> {
         .payload
         .encode(&mut data);
 
-    let mut cmsg = Cmsg::new(SOL_TLS, TLS_SET_RECORD_TYPE, [ALERT]);
+    let mut cmsg = Cmsg::new(libc::SOL_TLS, TLS_SET_RECORD_TYPE, [ALERT]);
 
     let msg = libc::msghdr {
         msg_name: std::ptr::null_mut(),
