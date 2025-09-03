@@ -1,10 +1,9 @@
 use std::os::unix::prelude::RawFd;
 
 use ktls_sys::bindings as ktls;
-use rustls::{
-    internal::msgs::{enums::AlertLevel, message::Message},
-    AlertDescription, ConnectionTrafficSecrets, SupportedCipherSuite,
-};
+use rustls::internal::msgs::enums::AlertLevel;
+use rustls::internal::msgs::message::Message;
+use rustls::{AlertDescription, ConnectionTrafficSecrets, SupportedCipherSuite};
 
 pub(crate) const TLS_1_2_VERSION_NUMBER: u16 = (((ktls::TLS_1_2_VERSION_MAJOR & 0xFF) as u16) << 8)
     | ((ktls::TLS_1_2_VERSION_MINOR & 0xFF) as u16);
